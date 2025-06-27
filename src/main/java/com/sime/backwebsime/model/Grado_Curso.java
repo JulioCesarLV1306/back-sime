@@ -14,7 +14,7 @@ public class Grado_Curso {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID_GRADO_CURSO", nullable = false)
-    private Integer id;
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "ID_GRADO", referencedColumnName = "ID_GRADO", nullable = false)

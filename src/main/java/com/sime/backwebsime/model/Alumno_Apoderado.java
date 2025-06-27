@@ -11,16 +11,15 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
+@IdClass(AlumnoApoderadoId.class)
 public class Alumno_Apoderado {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
+    @Id
     @ManyToOne
     @JoinColumn(name = "ID_ALUMNO", referencedColumnName = "ID_ALUMNO")
     private Alumno alumno;
 
+    @Id
     @ManyToOne
     @JoinColumn(name = "ID_APODERADO", referencedColumnName = "ID_APODERADO")
     private Apoderado apoderado;

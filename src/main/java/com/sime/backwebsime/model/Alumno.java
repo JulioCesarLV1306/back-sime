@@ -17,7 +17,7 @@ public class Alumno {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID_ALUMNO", nullable = false)
     @Id
-    private Integer id;
+    private Long id;
 
     @Column(name = "DNI", length = 8, nullable = false, unique = true)
     private String dniAlumno;

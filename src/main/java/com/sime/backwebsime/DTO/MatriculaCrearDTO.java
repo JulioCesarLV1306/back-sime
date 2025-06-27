@@ -13,5 +13,5 @@ import java.time.LocalDate;
 public class MatriculaCrearDTO {
     private AlumnoCrearDTO alumno;
     private ApoderadoCrearDTO apoderado;
-    private Integer gradoId;
+    private Long gradoId;
 }

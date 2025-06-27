@@ -16,5 +16,5 @@ public class AlumnoCrearDTO {
     private String genero;
     private String direccion;
     private String telefonoEmergencia;
-    private Integer gradoId; // ID del grado seleccionado
+    private Long gradoId; // ID del grado seleccionado
 }

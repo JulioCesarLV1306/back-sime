@@ -7,7 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DocenteDTO {
-    private Integer idDocente;
+    private Long idDocente;
     private String nombre;
     private String apellido;
     private String dni;

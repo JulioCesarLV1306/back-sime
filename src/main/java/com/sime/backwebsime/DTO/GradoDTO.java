@@ -8,7 +8,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GradoDTO {
-    private Integer idGrado;
+    private Long idGrado;
     private String nombre;
     private String nivel; // basico, medio, superior
 }

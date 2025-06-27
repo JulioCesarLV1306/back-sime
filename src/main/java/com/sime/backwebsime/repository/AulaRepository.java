@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface AulaRepository extends JpaRepository<Aula, Long> {
     @Query("SELECT a FROM Aula a WHERE a.grado.id = :idGrado")
-    List<Aula> findByGradoId(@Param("idGrado") Integer idGrado);
+    List<Aula> findByGradoId(@Param("idGrado") Long idGrado);
 
     @Query("SELECT a FROM Aula a JOIN FETCH a.grado")
     List<Aula> findAllWithGrado();

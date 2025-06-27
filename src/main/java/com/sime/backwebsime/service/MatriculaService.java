@@ -2,9 +2,11 @@ package com.sime.backwebsime.service;
 
 import com.sime.backwebsime.DTO.MatriculaCrearDTO;
 import com.sime.backwebsime.model.Alumno;
+import com.sime.backwebsime.model.Alumno_Apoderado;
 import com.sime.backwebsime.model.Apoderado;
 import com.sime.backwebsime.model.Aula;
 import com.sime.backwebsime.model.Matricula;
+import com.sime.backwebsime.repository.AlumnoApoderadoRepository;
 import com.sime.backwebsime.repository.AulaRepository;
 import com.sime.backwebsime.repository.MatriculaRepository;
 import jakarta.transaction.Transactional;
@@ -32,6 +34,9 @@ public class MatriculaService {
     @Autowired
     private MatriculaRepository matriculaRepository;
 
+    @Autowired
+    private AlumnoApoderadoRepository alumnoApoderadoRepository;
+
     @Transactional
     public void registrarAlumnoYApoderado(MatriculaCrearDTO dto) {
         // 1. Verificar vacantes
@@ -44,6 +49,13 @@ public class MatriculaService {
 
         // 3. Crear apoderado
         Apoderado apoderado = apoderadoService.crearApoderado(dto.getApoderado());
+
+        // 3.1. Crear relación alumno-apoderado
+        Alumno_Apoderado alumnoApoderado = new Alumno_Apoderado();
+        alumnoApoderado.setAlumno(alumno);
+        alumnoApoderado.setApoderado(apoderado);
+        alumnoApoderado.setEsPrincipal(true); // Asumimos que es el apoderado principal
+        alumnoApoderadoRepository.save(alumnoApoderado);
 
         // 4. Asociar al aula (por ejemplo, el primero disponible)
         Aula aula = aulaRepository.findByGradoId(dto.getGradoId()).stream()

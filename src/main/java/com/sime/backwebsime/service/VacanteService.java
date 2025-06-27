@@ -34,7 +34,7 @@ public class VacanteService {
                 .toList();
     }
 
-    public VacanteDisponibleDTO getVacantesByGradoId(Integer idGrado) {
+    public VacanteDisponibleDTO getVacantesByGradoId(Long idGrado) {
         List<Aula> aulas = aulaRepository.findByGradoId(idGrado);
 
         if (aulas.isEmpty()) {
@@ -79,7 +79,7 @@ public class VacanteService {
         );
     }
 
-    public boolean tieneVacantesDisponibles(Integer idGrado) {
+    public boolean tieneVacantesDisponibles(Long idGrado) {
         List<Aula> aulas = aulaRepository.findByGradoId(idGrado);
 
         if (aulas.isEmpty()) {

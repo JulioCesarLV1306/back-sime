@@ -21,8 +21,16 @@ public class VacanteController {
 
     //Para un grado especifico
     @GetMapping("/{idGrado}")
-    public VacanteDisponibleDTO getVacantes(@PathVariable Integer idGrado) {
-        return vacanteService.getVacantesByGradoId(idGrado.longValue());
+    public ResponseEntity<VacanteDisponibleDTO> getVacantes(@PathVariable Long idGrado) {
+        try {
+            VacanteDisponibleDTO vacantes = vacanteService.getVacantesByGradoId(idGrado);
+            return ResponseEntity.ok(vacantes);
+        } catch (Exception e) {
+            VacanteDisponibleDTO errorResponse = new VacanteDisponibleDTO(
+                false, 0, 0, null, "Error al consultar vacantes: " + e.getMessage()
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
     }
 
     //lista de todos los grados

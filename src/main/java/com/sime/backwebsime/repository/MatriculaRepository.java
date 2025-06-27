@@ -30,7 +30,39 @@ public interface MatriculaRepository extends JpaRepository<Matricula, Long> {
     @Query("SELECT m FROM Matricula m WHERE m.alumno.id = :alumnoId AND m.anioEscolar = :anioEscolar AND m.estado IN ('activo', 'pendiente')")
     Optional<Matricula> findMatriculaActivaByAlumnoAndAnio(@Param("alumnoId") Long alumnoId, @Param("anioEscolar") String anioEscolar);
     
-    // Estadísticas
-    @Query("SELECT COUNT(m) FROM Matricula m WHERE m.estado = :estado AND m.anioEscolar = :anioEscolar")
-    int countByEstadoAndAnio(@Param("estado") Matricula.EstadoMatricula estado, @Param("anioEscolar") String anioEscolar);
+    // Consultas para obtener matrículas con relaciones
+    @Query("SELECT m FROM Matricula m " +
+           "LEFT JOIN FETCH m.alumno a " +
+           "LEFT JOIN FETCH m.aula au " +
+           "LEFT JOIN FETCH au.grado g " +
+           "LEFT JOIN FETCH au.docente d " +
+           "ORDER BY m.fechaCreacion DESC")
+    List<Matricula> findAllWithDetails();
+    
+    @Query("SELECT m FROM Matricula m " +
+           "LEFT JOIN FETCH m.alumno a " +
+           "LEFT JOIN FETCH m.aula au " +
+           "LEFT JOIN FETCH au.grado g " +
+           "LEFT JOIN FETCH au.docente d " +
+           "WHERE m.anioEscolar = :anioEscolar " +
+           "ORDER BY m.fechaCreacion DESC")
+    List<Matricula> findByAnioEscolarWithDetails(@Param("anioEscolar") String anioEscolar);
+    
+    @Query("SELECT m FROM Matricula m " +
+           "LEFT JOIN FETCH m.alumno a " +
+           "LEFT JOIN FETCH m.aula au " +
+           "LEFT JOIN FETCH au.grado g " +
+           "LEFT JOIN FETCH au.docente d " +
+           "WHERE m.estado = :estado " +
+           "ORDER BY m.fechaCreacion DESC")
+    List<Matricula> findByEstadoWithDetails(@Param("estado") Matricula.EstadoMatricula estado);
+    
+    @Query("SELECT m FROM Matricula m " +
+           "LEFT JOIN FETCH m.alumno a " +
+           "LEFT JOIN FETCH m.aula au " +
+           "LEFT JOIN FETCH au.grado g " +
+           "LEFT JOIN FETCH au.docente d " +
+           "WHERE au.grado.id = :gradoId " +
+           "ORDER BY m.fechaCreacion DESC")
+    List<Matricula> findByGradoIdWithDetails(@Param("gradoId") Long gradoId);
 }

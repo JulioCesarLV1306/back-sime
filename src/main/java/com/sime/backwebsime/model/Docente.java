@@ -39,4 +39,5 @@ public class Docente {
 
     @Column(name = "ESTADO")
     private boolean estadoDocente;
+    
 }

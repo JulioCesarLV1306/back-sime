@@ -8,7 +8,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "MATRICULAS")
+@Table(name = "MATRICULAS", 
+       indexes = {
+           @Index(name = "idx_matricula_alumno", columnList = "ID_ALUMNO"),
+           @Index(name = "idx_matricula_aula", columnList = "ID_AULA"),
+           @Index(name = "idx_matricula_anio", columnList = "ANIO_ESCOLAR"),
+           @Index(name = "idx_matricula_estado", columnList = "ESTADO")
+       })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,7 +24,7 @@ public class Matricula {
     @Column(name = "ID_MATRICULA", nullable = false)
     private Long id;
 
-    @Column(name = "ANIO_ESCOLAR", length = 10, nullable = true)
+    @Column(name = "ANIO_ESCOLAR", length = 10, nullable = false)
     private String anioEscolar;
 
     @Column(name = "FECHA_MATRICULA", nullable = false)
@@ -32,13 +38,30 @@ public class Matricula {
     @Enumerated(EnumType.STRING)
     private EstadoMatricula estado; // ENUM: pendiente / aprobado / rechazado
 
-    @OneToOne
-    @JoinColumn(name = "ID_ALUMNO", referencedColumnName = "ID_ALUMNO")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ID_ALUMNO", nullable = false)
     private Alumno alumno;
 
-    @OneToOne
-    @JoinColumn(name = "ID_AULA", referencedColumnName = "ID_AULA")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ID_AULA", nullable = false)
     private Aula aula;
+
+    @Column(name = "FECHA_CREACION", nullable = false, updatable = false)
+    private LocalDate fechaCreacion;
+
+    @Column(name = "FECHA_ACTUALIZACION")
+    private LocalDate fechaActualizacion;
+
+    @PrePersist
+    protected void onCreate() {
+        fechaCreacion = LocalDate.now();
+        fechaActualizacion = LocalDate.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        fechaActualizacion = LocalDate.now();
+    }
 
     public enum TipoMatricula {
         Regular,

@@ -1,6 +1,5 @@
 package com.sime.backwebsime.repository;
 
-import com.sime.backwebsime.model.Alumno;
 import com.sime.backwebsime.model.Grado_Curso;
 import org.springframework.data.jpa.repository.JpaRepository;
 

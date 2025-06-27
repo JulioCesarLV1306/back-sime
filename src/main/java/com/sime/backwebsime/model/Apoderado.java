@@ -55,6 +55,31 @@ public class Apoderado {
     private String cargo;
 
     public enum Parentesco {
-        padre, madre, tutor, abuelo, otro
+        PADRE("Padre"),
+        MADRE("Madre"), 
+        ABUELO_A("Abuelo/a"),
+        TIO_A("Tío/a"),
+        HERMANO_A("Hermano/a"),
+        TUTOR_LEGAL("Tutor Legal"),
+        OTRO("Otro");
+        
+        private final String displayName;
+        
+        Parentesco(String displayName) {
+            this.displayName = displayName;
+        }
+        
+        public String getDisplayName() {
+            return displayName;
+        }
+        
+        public static Parentesco fromDisplayName(String displayName) {
+            for (Parentesco parentesco : values()) {
+                if (parentesco.getDisplayName().equals(displayName)) {
+                    return parentesco;
+                }
+            }
+            throw new IllegalArgumentException("Parentesco no válido: " + displayName);
+        }
     }
 }

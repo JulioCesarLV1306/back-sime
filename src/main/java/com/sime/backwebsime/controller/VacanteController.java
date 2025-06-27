@@ -21,7 +21,7 @@ public class VacanteController {
     //Para un grado especifico
     @GetMapping("/{idGrado}")
     public VacanteDisponibleDTO getVacantes(@PathVariable Integer idGrado) {
-        return vacanteService.getVacantesByGradoId(idGrado);
+        return vacanteService.getVacantesByGradoId(idGrado.longValue());
     }
 
     //lista de todos los grados

@@ -5,4 +5,5 @@ import com.sime.backwebsime.model.AlumnoApoderadoId;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AlumnoApoderadoRepository extends JpaRepository<Alumno_Apoderado, AlumnoApoderadoId> {
+    boolean existsByAlumno_IdAndApoderado_Id(Long alumnoId, Long apoderadoId);
 }

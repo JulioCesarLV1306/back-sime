@@ -6,6 +6,8 @@ import com.sime.backwebsime.repository.ApoderadoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class ApoderadoService {
     @Autowired
@@ -26,16 +28,24 @@ public class ApoderadoService {
             throw new RuntimeException("El parentesco es obligatorio");
         }
         
-        if (apoderadoRepository.existsByDni(dto.getDni())) {
-            throw new RuntimeException("Ya existe un apoderado con este DNI");
+        // Verificar si ya existe un apoderado con este DNI
+        Optional<Apoderado> apoderadoExistente = apoderadoRepository.findByDni(dto.getDni());
+        if (apoderadoExistente.isPresent()) {
+            // Retornar el apoderado existente en lugar de crear uno nuevo
+            return apoderadoExistente.get();
         }
         
+        // Si no existe, crear uno nuevo
         Apoderado apoderado = new Apoderado();
         apoderado.setDni(dto.getDni());
         apoderado.setNombre(dto.getNombres());
         apoderado.setApellido(dto.getApellidos());
         apoderado.setEmail(dto.getCorreoElectronico());
-        apoderado.setParentesco(Apoderado.Parentesco.valueOf(dto.getParentesco()));
+        try {
+            apoderado.setParentesco(Apoderado.Parentesco.fromDisplayName(dto.getParentesco()));
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Parentesco inválido: '" + dto.getParentesco() + "'. Valores válidos: Padre, Madre, Abuelo/a, Tío/a, Hermano/a, Tutor Legal, Otro");
+        }
         apoderado.setTelefono(dto.getTelefono());
         apoderado.setDireccion(dto.getDireccionLaboral());
         apoderado.setCargo(dto.getSituacionLaboral());

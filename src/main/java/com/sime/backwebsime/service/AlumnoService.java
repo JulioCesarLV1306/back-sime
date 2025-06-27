@@ -7,6 +7,8 @@ import com.sime.backwebsime.repository.AlumnoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class AlumnoService {
 
@@ -28,11 +30,23 @@ public class AlumnoService {
             throw new RuntimeException("El género del alumno es obligatorio");
         }
         
+        // Verificar si ya existe un alumno con este DNI
+        Optional<Alumno> alumnoExistente = alumnoRepository.findByDniAlumno(dto.getDni());
+        if (alumnoExistente.isPresent()) {
+            // Retornar el alumno existente en lugar de crear uno nuevo
+            return alumnoExistente.get();
+        }
+        
+        // Si no existe, crear uno nuevo
         Alumno alumno = new Alumno();
         alumno.setDniAlumno(dto.getDni());
         alumno.setNombreAlumno(dto.getNombres());
         alumno.setApellidoAlumno(dto.getApellidos());
-        alumno.setGeneroAlumno(Alumno.Genero.valueOf(dto.getGenero()));
+        try {
+            alumno.setGeneroAlumno(Alumno.Genero.valueOf(dto.getGenero()));
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Género inválido: '" + dto.getGenero() + "'. Valores válidos: Masculino, Femenino, Otro");
+        }
         alumno.setDireccionAlumno(dto.getDireccion());
         alumno.setTelefonoEmergencia(dto.getTelefonoEmergencia());
         alumno.setEstadoAlumno(true); // Por defecto activo

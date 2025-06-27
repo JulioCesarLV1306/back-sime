@@ -80,23 +80,21 @@ public class VacanteService {
     }
 
     public boolean tieneVacantesDisponibles(Long idGrado) {
+        String anioActual = String.valueOf(java.time.LocalDate.now().getYear());
         List<Aula> aulas = aulaRepository.findByGradoId(idGrado);
 
         if (aulas.isEmpty()) {
             return false;
         }
 
-        int cuposTotales = aulas.stream()
+        int capacidadTotal = aulas.stream()
                 .map(Aula::getCapacidad)
                 .filter(Objects::nonNull)
                 .mapToInt(Integer::intValue)
                 .sum();
 
-        int cuposOcupados = aulas.stream()
-                .flatMap(aula -> matriculaRepository.findByAula_IdAula(aula.getIdAula()).stream())
-                .mapToInt(m -> 1)
-                .sum();
+        int matriculasActivas = matriculaRepository.countMatriculasActivasByGradoAndAnio(idGrado, anioActual);
 
-        return cuposTotales > cuposOcupados;
+        return capacidadTotal > matriculasActivas;
     }
 }

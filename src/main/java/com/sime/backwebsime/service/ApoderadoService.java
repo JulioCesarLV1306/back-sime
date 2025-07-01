@@ -16,7 +16,9 @@ public class ApoderadoService {
 
     @Transactional
     public Apoderado crearApoderado(ApoderadoCrearDTO dto) {
-        // Validaciones
+        System.out.println("🔵 APODERADO SERVICE: Iniciando creación/búsqueda de apoderado");
+        
+        // Validaciones básicas
         if (dto.getDni() == null || dto.getDni().trim().isEmpty()) {
             throw new RuntimeException("El DNI del apoderado es obligatorio");
         }
@@ -31,15 +33,16 @@ public class ApoderadoService {
         }
         
         // Verificar si ya existe un apoderado con este DNI
-        System.out.println("🔍 Verificando si existe apoderado con DNI: " + dto.getDni());
+        System.out.println("🔍 APODERADO SERVICE: Buscando apoderado con DNI: " + dto.getDni());
         
         Optional<Apoderado> apoderadoExistente = apoderadoRepository.findByDni(dto.getDni());
         if (apoderadoExistente.isPresent()) {
-            System.out.println("✅ Reutilizando apoderado existente con DNI: " + dto.getDni());
-            return apoderadoExistente.get();
+            Apoderado apoderado = apoderadoExistente.get();
+            System.out.println("✅ APODERADO SERVICE: Encontrado apoderado existente con ID: " + apoderado.getId());
+            return apoderado;
         }
         
-        System.out.println("➕ Creando nuevo apoderado con DNI: " + dto.getDni());
+        System.out.println("➕ APODERADO SERVICE: Creando nuevo apoderado con DNI: " + dto.getDni());
         
         try {
             Apoderado apoderado = new Apoderado();
@@ -65,22 +68,17 @@ public class ApoderadoService {
             apoderado.setLugarTrabajo(dto.getLugarTrabajo());
             apoderado.setCargo(dto.getCargo());
             
-            // Intentar guardar
+            System.out.println("💾 APODERADO SERVICE: Guardando nuevo apoderado...");
+            
+            // Guardar sin flush inicialmente
             Apoderado apoderadoGuardado = apoderadoRepository.save(apoderado);
-            System.out.println("✅ Apoderado creado exitosamente con ID: " + apoderadoGuardado.getId());
+            
+            System.out.println("✅ APODERADO SERVICE: Apoderado guardado exitosamente con ID: " + apoderadoGuardado.getId());
             return apoderadoGuardado;
             
         } catch (Exception e) {
-            System.err.println("❌ Error al crear apoderado: " + e.getMessage());
-            
-            // En caso de error, intentar buscar si el apoderado ya existe
-            Optional<Apoderado> apoderadoConflicto = apoderadoRepository.findByDni(dto.getDni());
-            if (apoderadoConflicto.isPresent()) {
-                System.out.println("✅ Apoderado encontrado después del conflicto, reutilizando");
-                return apoderadoConflicto.get();
-            }
-            
-            throw new RuntimeException("Error al crear el apoderado: " + e.getMessage());
+            System.err.println("❌ APODERADO SERVICE: Error al crear apoderado: " + e.getMessage());
+            throw new RuntimeException("Error al crear el apoderado: " + e.getMessage(), e);
         }
     }
 }

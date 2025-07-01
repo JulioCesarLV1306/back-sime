@@ -8,6 +8,8 @@ import com.sime.backwebsime.model.Apoderado;
 import com.sime.backwebsime.model.Aula;
 import com.sime.backwebsime.model.Matricula;
 import com.sime.backwebsime.repository.AlumnoApoderadoRepository;
+import com.sime.backwebsime.repository.AlumnoRepository;
+import com.sime.backwebsime.repository.ApoderadoRepository;
 import com.sime.backwebsime.repository.AulaRepository;
 import com.sime.backwebsime.repository.MatriculaRepository;
 import jakarta.transaction.Transactional;
@@ -40,57 +42,114 @@ public class MatriculaService {
 
     @Autowired
     private AlumnoApoderadoRepository alumnoApoderadoRepository;
+    
+    @Autowired
+    private AlumnoRepository alumnoRepository;
+    
+    @Autowired
+    private ApoderadoRepository apoderadoRepository;
 
     @Transactional
     public void registrarAlumnoYApoderado(MatriculaCrearDTO dto) {
-        // 1. Verificar vacantes
-        if (!vacanteService.tieneVacantesDisponibles(dto.getGradoId())) {
-            throw new RuntimeException("No hay vacantes disponibles para el grado seleccionado.");
+        System.out.println("🚀 Iniciando registro de matrícula...");
+        
+        try {
+            // 1. Verificar vacantes PRIMERO
+            if (!vacanteService.tieneVacantesDisponibles(dto.getGradoId())) {
+                throw new RuntimeException("No hay vacantes disponibles para el grado seleccionado.");
+            }
+
+            String anioActual = String.valueOf(java.time.LocalDate.now().getYear());
+            
+            // 2. VERIFICACIÓN ÚNICA: Comprobar si el DNI ya tiene matrícula activa ANTES de crear nada
+            Optional<Alumno> alumnoExistentePorDni = alumnoRepository.findByDniAlumno(dto.getAlumno().getDni());
+            if (alumnoExistentePorDni.isPresent()) {
+                System.out.println("🔍 Alumno con DNI " + dto.getAlumno().getDni() + " ya existe, verificando matrícula...");
+                
+                Optional<Matricula> matriculaExistente = matriculaRepository.findMatriculaActivaByAlumnoAndAnio(
+                    alumnoExistentePorDni.get().getId(), anioActual);
+                
+                if (matriculaExistente.isPresent()) {
+                    System.out.println("❌ Alumno ya tiene matrícula activa en " + anioActual);
+                    throw new RuntimeException("El alumno ya está matriculado en el año " + anioActual + " con estado: " + matriculaExistente.get().getEstado());
+                }
+                
+                System.out.println("✅ Alumno existe pero no tiene matrícula activa, continuando...");
+            }
+
+            // 3. Procesar entidades de forma secuencial y segura
+            // 3.1. Crear o reutilizar alumno
+            Alumno alumno = alumnoService.crearAlumno(dto.getAlumno());
+            System.out.println("✅ Alumno procesado con ID: " + alumno.getId());
+
+            // 3.2. Crear o reutilizar apoderado
+            Apoderado apoderado = apoderadoService.crearApoderado(dto.getApoderado());
+            System.out.println("✅ Apoderado procesado con ID: " + apoderado.getId());
+
+            // 3.3. Obtener las entidades frescas de la base de datos para asegurar que están en la sesión actual
+            final Long alumnoId = alumno.getId();
+            final Long apoderadoId = apoderado.getId();
+            
+            alumno = alumnoRepository.findById(alumnoId)
+                    .orElseThrow(() -> new RuntimeException("Error: No se pudo obtener el alumno con ID " + alumnoId));
+            apoderado = apoderadoRepository.findById(apoderadoId)
+                    .orElseThrow(() -> new RuntimeException("Error: No se pudo obtener el apoderado con ID " + apoderadoId));
+
+            // 3.4. Crear relación alumno-apoderado (si no existe)
+            boolean relacionExiste = alumnoApoderadoRepository.existsByAlumno_IdAndApoderado_Id(alumnoId, apoderadoId);
+            if (!relacionExiste) {
+                Alumno_Apoderado alumnoApoderado = new Alumno_Apoderado();
+                alumnoApoderado.setAlumno(alumno);
+                alumnoApoderado.setApoderado(apoderado);
+                alumnoApoderado.setEsPrincipal(true);
+                alumnoApoderadoRepository.save(alumnoApoderado);
+                System.out.println("✅ Relación alumno-apoderado creada");
+            } else {
+                System.out.println("✅ Relación alumno-apoderado ya existe");
+            }
+
+            // 3.5. Asociar al aula con vacantes disponibles
+            Aula aula = aulaRepository.findByGradoId(dto.getGradoId()).stream()
+                    .filter(a -> {
+                        int capacidad = a.getCapacidad() != null ? a.getCapacidad() : 0;
+                        int ocupados = matriculaRepository.countMatriculasActivasByAula(a.getIdAula());
+                        return capacidad > ocupados;
+                    })
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("No hay aulas con vacantes disponibles para el grado " + dto.getGradoId()));
+
+            // 3.6. Registrar matrícula
+            Matricula matricula = new Matricula();
+            matricula.setAlumno(alumno);
+            matricula.setAula(aula);
+            matricula.setAnioEscolar(anioActual);
+            matricula.setFechaMatricula(LocalDate.now());
+            matricula.setTipoMatricula(Matricula.TipoMatricula.Regular);
+            matricula.setEstado(Matricula.EstadoMatricula.activo);
+
+            // IMPORTANTE: Guardar y hacer flush inmediatamente para obtener el ID
+            Matricula matriculaGuardada = matriculaRepository.saveAndFlush(matricula);
+            
+            // Verificar que el ID fue generado correctamente
+            if (matriculaGuardada.getId() != null) {
+                System.out.println("✅ Matrícula registrada exitosamente con ID: " + matriculaGuardada.getId());
+            } else {
+                System.out.println("⚠️ Matrícula guardada pero sin ID visible (puede ser normal en algunas configuraciones)");
+            }
+            
+            System.out.println("🎯 Proceso de matrícula completado exitosamente");
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error al procesar matrícula: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Relanzar la excepción para que sea manejada por el controlador
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            } else {
+                throw new RuntimeException("Error al registrar la matrícula: " + e.getMessage(), e);
+            }
         }
-
-        // 2. Crear alumno
-        Alumno alumno = alumnoService.crearAlumno(dto.getAlumno());
-
-        // 3. Crear apoderado
-        Apoderado apoderado = apoderadoService.crearApoderado(dto.getApoderado());
-
-        // 3.1. Crear relación alumno-apoderado (si no existe)
-        boolean relacionExiste = alumnoApoderadoRepository.existsByAlumno_IdAndApoderado_Id(alumno.getId(), apoderado.getId());
-        if (!relacionExiste) {
-            Alumno_Apoderado alumnoApoderado = new Alumno_Apoderado();
-            alumnoApoderado.setAlumno(alumno);
-            alumnoApoderado.setApoderado(apoderado);
-            alumnoApoderado.setEsPrincipal(true); // Asumimos que es el apoderado principal
-            alumnoApoderadoRepository.save(alumnoApoderado);
-        }
-
-        // 4. Verificar si el alumno ya está matriculado en el año actual
-        String anioActual = String.valueOf(java.time.LocalDate.now().getYear());
-        Optional<Matricula> matriculaExistente = matriculaRepository.findMatriculaActivaByAlumnoAndAnio(alumno.getId(), anioActual);
-        if (matriculaExistente.isPresent()) {
-            throw new RuntimeException("El alumno ya está matriculado en el año " + anioActual + " con estado: " + matriculaExistente.get().getEstado());
-        }
-
-        // 5. Asociar al aula con vacantes disponibles
-        Aula aula = aulaRepository.findByGradoId(dto.getGradoId()).stream()
-                .filter(a -> {
-                    int capacidad = a.getCapacidad() != null ? a.getCapacidad() : 0;
-                    int ocupados = matriculaRepository.countMatriculasActivasByAula(a.getIdAula());
-                    return capacidad > ocupados;
-                })
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No hay aulas con vacantes disponibles para el grado " + dto.getGradoId()));
-
-        // 6. Registrar matrícula
-        Matricula matricula = new Matricula();
-        matricula.setAlumno(alumno);
-        matricula.setAula(aula);
-        matricula.setAnioEscolar(anioActual);
-        matricula.setFechaMatricula(LocalDate.now());
-        matricula.setTipoMatricula(Matricula.TipoMatricula.Regular);
-        matricula.setEstado(Matricula.EstadoMatricula.activo);
-
-        matriculaRepository.save(matricula);
     }
     
     // Métodos para listar matrículas

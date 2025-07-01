@@ -12,7 +12,11 @@ import com.sime.backwebsime.repository.AlumnoRepository;
 import com.sime.backwebsime.repository.ApoderadoRepository;
 import com.sime.backwebsime.repository.AulaRepository;
 import com.sime.backwebsime.repository.MatriculaRepository;
-import jakarta.transaction.Transactional;
+
+// Cambiamos de jakarta.transaction a org.springframework para tener más opciones
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -49,9 +53,9 @@ public class MatriculaService {
     @Autowired
     private ApoderadoRepository apoderadoRepository;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void registrarAlumnoYApoderado(MatriculaCrearDTO dto) {
-        System.out.println("🚀 Iniciando registro de matrícula...");
+        System.out.println("🚀 Iniciando registro de matrícula en una nueva transacción...");
         
         try {
             // 1. Verificar vacantes PRIMERO
@@ -80,20 +84,39 @@ public class MatriculaService {
             // 3. Procesar entidades de forma secuencial y segura
             // 3.1. Crear o reutilizar alumno
             Alumno alumno = alumnoService.crearAlumno(dto.getAlumno());
+            
+            // VALIDACIÓN CRÍTICA: Verificar que el alumno tiene ID válido
+            if (alumno == null || alumno.getId() == null) {
+                throw new RuntimeException("Error crítico: El alumno no tiene un ID válido");
+            }
             System.out.println("✅ Alumno procesado con ID: " + alumno.getId());
 
             // 3.2. Crear o reutilizar apoderado
             Apoderado apoderado = apoderadoService.crearApoderado(dto.getApoderado());
+            
+            // VALIDACIÓN CRÍTICA: Verificar que el apoderado tiene ID válido
+            if (apoderado == null || apoderado.getId() == null) {
+                throw new RuntimeException("Error crítico: El apoderado no tiene un ID válido");
+            }
             System.out.println("✅ Apoderado procesado con ID: " + apoderado.getId());
 
             // 3.3. Obtener las entidades frescas de la base de datos para asegurar que están en la sesión actual
             final Long alumnoId = alumno.getId();
             final Long apoderadoId = apoderado.getId();
             
+            // Recargar entidades para asegurar que están en la sesión actual
             alumno = alumnoRepository.findById(alumnoId)
                     .orElseThrow(() -> new RuntimeException("Error: No se pudo obtener el alumno con ID " + alumnoId));
             apoderado = apoderadoRepository.findById(apoderadoId)
                     .orElseThrow(() -> new RuntimeException("Error: No se pudo obtener el apoderado con ID " + apoderadoId));
+            
+            // VALIDACIONES FINALES antes de continuar
+            if (alumno.getId() == null) {
+                throw new RuntimeException("Error crítico: Alumno recargado sin ID válido");
+            }
+            if (apoderado.getId() == null) {
+                throw new RuntimeException("Error crítico: Apoderado recargado sin ID válido");
+            }
 
             // 3.4. Crear relación alumno-apoderado (si no existe)
             boolean relacionExiste = alumnoApoderadoRepository.existsByAlumno_IdAndApoderado_Id(alumnoId, apoderadoId);
@@ -127,17 +150,16 @@ public class MatriculaService {
             matricula.setTipoMatricula(Matricula.TipoMatricula.Regular);
             matricula.setEstado(Matricula.EstadoMatricula.activo);
 
-            // IMPORTANTE: Guardar y hacer flush inmediatamente para obtener el ID
-            Matricula matriculaGuardada = matriculaRepository.saveAndFlush(matricula);
+            // IMPORTANTE: Guardar y hacer flush inmediatamente
+            matriculaRepository.saveAndFlush(matricula);
             
-            // Verificar que el ID fue generado correctamente
-            if (matriculaGuardada.getId() != null) {
-                System.out.println("✅ Matrícula registrada exitosamente con ID: " + matriculaGuardada.getId());
-            } else {
-                System.out.println("⚠️ Matrícula guardada pero sin ID visible (puede ser normal en algunas configuraciones)");
-            }
+            // Verificar que el proceso se completó correctamente
+            System.out.println("✅ Matrícula registrada exitosamente");
             
             System.out.println("🎯 Proceso de matrícula completado exitosamente");
+            
+            // NO acceder a ninguna propiedad de las entidades después de este punto
+            // para evitar lazy loading y problemas de sesión;
             
         } catch (Exception e) {
             System.err.println("❌ Error al procesar matrícula: " + e.getMessage());
@@ -185,30 +207,38 @@ public class MatriculaService {
     private MatriculaResponseDTO convertToResponseDTO(Matricula matricula) {
         MatriculaResponseDTO dto = new MatriculaResponseDTO();
         
-        // Datos de la matrícula
-        dto.setIdMatricula(matricula.getId());
-        dto.setAnioEscolar(matricula.getAnioEscolar());
-        dto.setFechaMatricula(matricula.getFechaMatricula());
-        dto.setFechaCreacion(matricula.getFechaCreacion());
-        dto.setFechaActualizacion(matricula.getFechaActualizacion());
-        dto.setTipoMatricula(matricula.getTipoMatricula().name());
-        dto.setEstado(matricula.getEstado().name());
-        
-        // Datos del alumno
-        if (matricula.getAlumno() != null) {
-            dto.setAlumno(convertAlumnoToDTO(matricula.getAlumno()));
-        }
-        
-        // Datos del aula y grado
-        if (matricula.getAula() != null) {
-            dto.setAula(convertAulaToDTO(matricula.getAula()));
-        }
-        
-        // Datos del apoderado principal
-        Optional<Alumno_Apoderado> apoderadoPrincipal = alumnoApoderadoRepository
-                .findApoderadoPrincipalByAlumnoId(matricula.getAlumno().getId());
-        if (apoderadoPrincipal.isPresent()) {
-            dto.setApoderadoPrincipal(convertApoderadoToDTO(apoderadoPrincipal.get().getApoderado()));
+        try {
+            // Datos de la matrícula
+            dto.setIdMatricula(matricula.getId());
+            dto.setAnioEscolar(matricula.getAnioEscolar());
+            dto.setFechaMatricula(matricula.getFechaMatricula());
+            dto.setFechaCreacion(matricula.getFechaCreacion());
+            dto.setFechaActualizacion(matricula.getFechaActualizacion());
+            dto.setTipoMatricula(matricula.getTipoMatricula().name());
+            dto.setEstado(matricula.getEstado().name());
+            
+            // Datos del alumno (con protección contra lazy loading)
+            if (matricula.getAlumno() != null && matricula.getAlumno().getId() != null) {
+                dto.setAlumno(convertAlumnoToDTO(matricula.getAlumno()));
+            }
+            
+            // Datos del aula y grado (con protección contra lazy loading)
+            if (matricula.getAula() != null && matricula.getAula().getIdAula() != null) {
+                dto.setAula(convertAulaToDTO(matricula.getAula()));
+            }
+            
+            // Datos del apoderado principal (solo si el alumno tiene ID válido)
+            if (matricula.getAlumno() != null && matricula.getAlumno().getId() != null) {
+                Optional<Alumno_Apoderado> apoderadoPrincipal = alumnoApoderadoRepository
+                        .findApoderadoPrincipalByAlumnoId(matricula.getAlumno().getId());
+                if (apoderadoPrincipal.isPresent()) {
+                    dto.setApoderadoPrincipal(convertApoderadoToDTO(apoderadoPrincipal.get().getApoderado()));
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error al convertir matrícula a DTO: " + e.getMessage());
+            // Continuar con los datos que se pudieron obtener
         }
         
         return dto;
@@ -282,5 +312,34 @@ public class MatriculaService {
                 apoderado.getLugarTrabajo(),
                 apoderado.getCargo()
         );
+    }
+    
+    /**
+     * Verifica si ya existe una matrícula para un alumno con el DNI especificado en el año actual
+     * @param dniAlumno DNI del alumno a verificar
+     * @return true si ya existe una matrícula activa, false en caso contrario
+     */
+    @Transactional(readOnly = true)
+    public boolean verificarMatriculaExistente(String dniAlumno) {
+        System.out.println("🔍 Verificando si existe matrícula para alumno con DNI: " + dniAlumno);
+        
+        // 1. Buscar al alumno por DNI
+        Optional<Alumno> alumnoOpt = alumnoRepository.findByDniAlumno(dniAlumno);
+        if (!alumnoOpt.isPresent()) {
+            System.out.println("ℹ️ No existe alumno con DNI: " + dniAlumno);
+            return false;
+        }
+        
+        // 2. Verificar si tiene matrícula activa en el año actual
+        String anioActual = String.valueOf(java.time.LocalDate.now().getYear());
+        Optional<Matricula> matriculaExistente = matriculaRepository.findMatriculaActivaByAlumnoAndAnio(
+            alumnoOpt.get().getId(), anioActual);
+        
+        boolean tieneMatricula = matriculaExistente.isPresent();
+        System.out.println(tieneMatricula 
+            ? "⚠️ El alumno ya tiene matrícula activa en el año: " + anioActual
+            : "✅ El alumno no tiene matrícula activa en el año: " + anioActual);
+        
+        return tieneMatricula;
     }
 }

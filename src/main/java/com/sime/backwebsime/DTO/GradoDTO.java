@@ -1,6 +1,5 @@
 package com.sime.backwebsime.DTO;
 
-import com.sime.backwebsime.model.Grado;
 import lombok.*;
 
 @Getter

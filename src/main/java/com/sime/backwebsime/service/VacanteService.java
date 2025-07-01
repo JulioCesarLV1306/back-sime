@@ -48,7 +48,7 @@ public class VacanteService {
         }
 
         // Reutilizamos el método común
-        Grado grado = aulas.getFirst().getGrado();
+        Grado grado = aulas.get(0).getGrado();
         return calcularVacantesPorGrado(grado, aulas);
     }
 

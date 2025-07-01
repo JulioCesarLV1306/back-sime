@@ -50,6 +50,7 @@ public class AlumnoService {
         alumno.setDireccionAlumno(dto.getDireccion());
         alumno.setTelefonoEmergencia(dto.getTelefonoEmergencia());
         alumno.setEstadoAlumno(true); // Por defecto activo
+        
 
         return alumnoRepository.save(alumno);
     }

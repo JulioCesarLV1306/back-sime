@@ -13,9 +13,17 @@ public class ApoderadoCrearDTO {
     private String dni;
     private String nombres;
     private String apellidos;
-    private String correoElectronico;
     private String parentesco;
     private String telefono;
-    private String direccionLaboral;
-    private String situacionLaboral;
+    private String email;
+    
+    // Dirección completa
+    private String direccion;
+    private String departamento;
+    private String provincia;
+    private String distrito;
+    
+    // Información laboral
+    private String lugarTrabajo;
+    private String cargo;
 }

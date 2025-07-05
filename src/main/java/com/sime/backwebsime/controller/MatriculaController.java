@@ -29,23 +29,7 @@ public class MatriculaController {
         try {
             System.out.println("🎯 CONTROLADOR: Iniciando registro de matrícula...");
             
-            // Verificar si ya existe una matrícula para este alumno en este año
-            if (dto.getAlumno() != null && dto.getAlumno().getDni() != null) {
-                boolean yaExiste = matriculaService.verificarMatriculaExistente(dto.getAlumno().getDni());
-                if (yaExiste) {
-                    System.out.println("⚠️ CONTROLADOR: Se detectó un intento de registro duplicado, retornando éxito");
-                    
-                    response.put("success", true);
-                    response.put("message", "Matrícula registrada exitosamente");
-                    response.put("status", "SUCCESS");
-                    response.put("code", "REGISTRATION_SUCCESS");
-                    response.put("timestamp", java.time.LocalDateTime.now().toString());
-                    response.put("warning", "Posible envío duplicado detectado");
-                    
-                    return ResponseEntity.status(HttpStatus.CREATED).body(response);
-                }
-            }
-            
+            // Llamar directamente al servicio sin verificaciones previas
             matriculaService.registrarAlumnoYApoderado(dto);
             
             System.out.println("🎯 CONTROLADOR: Registro exitoso, preparando respuesta...");
@@ -71,27 +55,9 @@ public class MatriculaController {
             e.printStackTrace();
             
             // ❌ RESPUESTA DE ERROR MEJORADA
-            // VERIFICACIÓN ESPECIAL PARA EL ERROR DE SESIÓN
             String errorMsg = e.getMessage();
-            boolean isSessionError = errorMsg.contains("null id") && errorMsg.contains("don't flush the Session");
             
-            // Si es un error de sesión pero la matrícula se registró, devolver éxito
-            if (isSessionError) {
-                System.err.println("🎯 CONTROLADOR: Detectado error de sesión pero la matrícula se registró correctamente");
-                
-                // ✅ RESPUESTA DE ÉXITO CON ADVERTENCIA
-                response.put("success", true); 
-                response.put("message", "Matrícula registrada exitosamente (ignorando error de sesión posterior)");
-                response.put("status", "SUCCESS");
-                response.put("code", "REGISTRATION_SUCCESS_WITH_SESSION_WARNING");
-                response.put("warning", "Se detectó un problema de sesión posterior al registro exitoso");
-                response.put("originalError", e.getMessage());
-                response.put("timestamp", java.time.LocalDateTime.now().toString());
-                
-                return ResponseEntity.status(HttpStatus.CREATED).body(response);
-            }
-            
-            // Para cualquier otro error, continuar con el flujo normal
+            // Para cualquier error, usar el flujo normal de determinación de errores
             ErrorInfo errorInfo = determineErrorInfo(errorMsg);
             
             System.err.println("🎯 CONTROLADOR: Error categorizado como: " + errorInfo.code + " - " + errorInfo.type);
@@ -143,9 +109,17 @@ public class MatriculaController {
     private ErrorInfo determineErrorInfo(String errorMessage) {
         String lowerMessage = errorMessage.toLowerCase();
         
-      
+        // PRIMERA PRIORIDAD: Manejo específico para errores de matrícula existente
+        if (lowerMessage.contains("ya está matriculado") || lowerMessage.contains("ya tiene matrícula activa")) {
+            return new ErrorInfo(
+                "STUDENT_ALREADY_ENROLLED",
+                "BUSINESS_RULE_VIOLATION", 
+                errorMessage, // Usar el mensaje original que contiene el año específico
+                HttpStatus.CONFLICT
+            );
+        }
         
-        // TERCERA PRIORIDAD: Manejo específico para errores de duplicado REALES de base de datos
+        // SEGUNDA PRIORIDAD: Manejo específico para errores de duplicado REALES de base de datos
         if ((lowerMessage.contains("duplicate entry") || lowerMessage.contains("constraint")) 
             && !lowerMessage.contains("null id") 
             && !lowerMessage.contains("don't flush")

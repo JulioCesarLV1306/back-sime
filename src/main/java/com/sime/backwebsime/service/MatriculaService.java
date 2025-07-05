@@ -314,32 +314,4 @@ public class MatriculaService {
         );
     }
     
-    /**
-     * Verifica si ya existe una matrícula para un alumno con el DNI especificado en el año actual
-     * @param dniAlumno DNI del alumno a verificar
-     * @return true si ya existe una matrícula activa, false en caso contrario
-     */
-    @Transactional(readOnly = true)
-    public boolean verificarMatriculaExistente(String dniAlumno) {
-        System.out.println("🔍 Verificando si existe matrícula para alumno con DNI: " + dniAlumno);
-        
-        // 1. Buscar al alumno por DNI
-        Optional<Alumno> alumnoOpt = alumnoRepository.findByDniAlumno(dniAlumno);
-        if (!alumnoOpt.isPresent()) {
-            System.out.println("ℹ️ No existe alumno con DNI: " + dniAlumno);
-            return false;
-        }
-        
-        // 2. Verificar si tiene matrícula activa en el año actual
-        String anioActual = String.valueOf(java.time.LocalDate.now().getYear());
-        Optional<Matricula> matriculaExistente = matriculaRepository.findMatriculaActivaByAlumnoAndAnio(
-            alumnoOpt.get().getId(), anioActual);
-        
-        boolean tieneMatricula = matriculaExistente.isPresent();
-        System.out.println(tieneMatricula 
-            ? "⚠️ El alumno ya tiene matrícula activa en el año: " + anioActual
-            : "✅ El alumno no tiene matrícula activa en el año: " + anioActual);
-        
-        return tieneMatricula;
-    }
 }

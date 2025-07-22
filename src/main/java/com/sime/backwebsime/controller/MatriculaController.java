@@ -14,16 +14,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/matricula")
-@CrossOrigin(
-    origins = {
-        "http://localhost:4200",
-        "https://web-sime.netlify.app",
-        "https://back-sime.onrender.com",
-        "null"
-    },
-    allowedHeaders = "*",
-    methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS}
-)
 public class MatriculaController {
     @Autowired
     private MatriculaService matriculaService;

@@ -16,12 +16,11 @@ public class CorsConfig implements WebMvcConfigurer {
         registry.addMapping("/api/**")
                 .allowedOrigins(
                     "http://localhost:4200",
-                    "https://*.netlify.app",
-                    "https://netlify.app",
-                    "https://tu-app-sime.onrender.com"
+                    "https://web-sime.netlify.app",
+                    "https://back-sime.onrender.com"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin")
+                .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600); // Cache preflight response for 1 hour
         
@@ -41,13 +40,12 @@ public class CorsConfig implements WebMvcConfigurer {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedOrigin("http://localhost:4200");
-        configuration.addAllowedOrigin("https://*.netlify.app");
-        configuration.addAllowedOrigin("https://netlify.app");
-        configuration.addAllowedOrigin("https://tu-app-sime.onrender.com");
+        configuration.addAllowedOrigin("https://web-sime.netlify.app");
+        configuration.addAllowedOrigin("https://back-sime.onrender.com");
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
-        
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
         return source;

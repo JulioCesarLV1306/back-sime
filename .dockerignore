@@ -1,0 +1,11 @@
+# Ignorar archivos innecesarios para Docker
+target/
+.git/
+.gitignore
+README.md
+*.md
+.DS_Store
+node_modules/
+.idea/
+*.iml
+*.log

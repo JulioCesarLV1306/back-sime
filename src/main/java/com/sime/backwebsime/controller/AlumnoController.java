@@ -16,27 +16,31 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/alumnos")
-@CrossOrigin(origins = {
-    "http://localhost:4200",
-    "https://web-sime.netlify.app",
-    "https://back-sime.onrender.com",
-    "null"
-})
+@CrossOrigin(
+    origins = {
+        "http://localhost:4200",
+        "https://web-sime.netlify.app",
+        "https://back-sime.onrender.com",
+        "null"
+    },
+    allowedHeaders = "*",
+    methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS}
+)
 public class AlumnoController {
-    
+
     @Autowired
     private AlumnoService alumnoService;
-    
+
     /**
      * Lista todos los alumnos
      */
     @GetMapping("/listar")
     public ResponseEntity<Map<String, Object>> listarTodosLosAlumnos() {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             List<AlumnoListarDTO> alumnos = alumnoService.listarTodosLosAlumnos();
-            
+
             response.put("success", true);
             response.put("message", "Lista de alumnos obtenida exitosamente");
             response.put("status", "SUCCESS");
@@ -45,9 +49,9 @@ public class AlumnoController {
             response.put("data", alumnos);
             response.put("totalAlumnos", alumnos.size());
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Error al obtener la lista de alumnos");
@@ -57,21 +61,21 @@ public class AlumnoController {
             response.put("data", null);
             response.put("originalError", e.getMessage());
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Lista solo alumnos activos
      */
     @GetMapping("/listar/activos")
     public ResponseEntity<Map<String, Object>> listarAlumnosActivos() {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             List<AlumnoListarDTO> alumnos = alumnoService.listarAlumnosActivos();
-            
+
             response.put("success", true);
             response.put("message", "Lista de alumnos activos obtenida exitosamente");
             response.put("status", "SUCCESS");
@@ -80,9 +84,9 @@ public class AlumnoController {
             response.put("data", alumnos);
             response.put("totalAlumnos", alumnos.size());
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "Error al obtener la lista de alumnos activos");
@@ -92,18 +96,18 @@ public class AlumnoController {
             response.put("data", null);
             response.put("originalError", e.getMessage());
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Busca un alumno por DNI
      */
     @GetMapping("/buscar/{dni}")
     public ResponseEntity<Map<String, Object>> buscarAlumnoPorDni(@PathVariable String dni) {
         Map<String, Object> response = new HashMap<>();
-        
+
         // Validar formato del DNI
         if (dni == null || !dni.matches("\\d{8}")) {
             response.put("success", false);
@@ -114,13 +118,13 @@ public class AlumnoController {
             response.put("data", null);
             response.put("originalError", "Formato inválido: " + dni);
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.badRequest().body(response);
         }
-        
+
         try {
             AlumnoListarDTO alumno = alumnoService.buscarAlumnoPorDni(dni);
-            
+
             response.put("success", true);
             response.put("message", "Alumno encontrado exitosamente");
             response.put("status", "SUCCESS");
@@ -128,9 +132,9 @@ public class AlumnoController {
             response.put("type", "SUCCESS");
             response.put("data", alumno);
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (RuntimeException e) {
             // Error de negocio (alumno no encontrado)
             response.put("success", false);
@@ -141,9 +145,9 @@ public class AlumnoController {
             response.put("data", null);
             response.put("originalError", e.getMessage());
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-            
+
         } catch (Exception e) {
             // Error interno del servidor
             response.put("success", false);
@@ -154,23 +158,23 @@ public class AlumnoController {
             response.put("data", null);
             response.put("originalError", e.getMessage());
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Actualiza el estado de un alumno (activo/inactivo) por ID
      */
     @PutMapping("/estado")
     public ResponseEntity<Map<String, Object>> actualizarEstadoAlumno(@Valid @RequestBody AlumnoEstadoDTO request) {
         Map<String, Object> response = new HashMap<>();
-        
+
         try {
             AlumnoListarDTO alumnoActualizado = alumnoService.actualizarEstadoAlumno(request);
-            
+
             String estadoTexto = request.getEstado() ? "activo" : "inactivo";
-            
+
             response.put("success", true);
             response.put("message", "Estado del alumno actualizado a " + estadoTexto + " exitosamente");
             response.put("status", "SUCCESS");
@@ -178,9 +182,9 @@ public class AlumnoController {
             response.put("type", "SUCCESS");
             response.put("data", alumnoActualizado);
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (RuntimeException e) {
             // Error de negocio (alumno no encontrado)
             response.put("success", false);
@@ -191,9 +195,9 @@ public class AlumnoController {
             response.put("data", null);
             response.put("originalError", e.getMessage());
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-            
+
         } catch (Exception e) {
             // Error interno del servidor
             response.put("success", false);
@@ -204,21 +208,21 @@ public class AlumnoController {
             response.put("data", null);
             response.put("originalError", e.getMessage());
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-    
+
     /**
      * Actualiza el estado de un alumno (activo/inactivo) por DNI
      */
     @PutMapping("/estado/{dni}")
     public ResponseEntity<Map<String, Object>> actualizarEstadoAlumnoPorDni(
-            @PathVariable String dni, 
+            @PathVariable String dni,
             @RequestParam Boolean estado) {
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
         // Validar formato del DNI
         if (dni == null || !dni.matches("\\d{8}")) {
             response.put("success", false);
@@ -229,10 +233,10 @@ public class AlumnoController {
             response.put("data", null);
             response.put("originalError", "Formato inválido: " + dni);
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.badRequest().body(response);
         }
-        
+
         // Validar parámetro estado
         if (estado == null) {
             response.put("success", false);
@@ -243,25 +247,26 @@ public class AlumnoController {
             response.put("data", null);
             response.put("originalError", "Parámetro estado no proporcionado");
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.badRequest().body(response);
         }
-        
+
         try {
             AlumnoListarDTO alumnoActualizado = alumnoService.actualizarEstadoAlumnoPorDni(dni, estado);
-            
+
             String estadoTexto = estado ? "activo" : "inactivo";
-            
+
             response.put("success", true);
-            response.put("message", "Estado del alumno con DNI " + dni + " actualizado a " + estadoTexto + " exitosamente");
+            response.put("message",
+                    "Estado del alumno con DNI " + dni + " actualizado a " + estadoTexto + " exitosamente");
             response.put("status", "SUCCESS");
             response.put("code", "ALUMNOS_005");
             response.put("type", "SUCCESS");
             response.put("data", alumnoActualizado);
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.ok(response);
-            
+
         } catch (RuntimeException e) {
             // Error de negocio (alumno no encontrado)
             response.put("success", false);
@@ -272,9 +277,9 @@ public class AlumnoController {
             response.put("data", null);
             response.put("originalError", e.getMessage());
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
-            
+
         } catch (Exception e) {
             // Error interno del servidor
             response.put("success", false);
@@ -285,7 +290,7 @@ public class AlumnoController {
             response.put("data", null);
             response.put("originalError", e.getMessage());
             response.put("timestamp", LocalDateTime.now().toString());
-            
+
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }

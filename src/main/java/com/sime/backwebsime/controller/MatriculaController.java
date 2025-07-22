@@ -14,7 +14,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/matricula")
-@CrossOrigin(origins = "http://localhost:4200", 
+@CrossOrigin(origins = {
+    "http://localhost:4200",
+    "https://*.netlify.app",
+    "https://netlify.app",
+    "https://tu-app-sime.onrender.com"
+}, 
              methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS},
              allowedHeaders = {"Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"},
              allowCredentials = "true")

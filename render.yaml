@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: sime-backend
+    env: java
+    buildCommand: "./mvnw clean package -DskipTests"
+    startCommand: "java -Dserver.port=$PORT -jar target/backwebsime-0.0.1-SNAPSHOT.jar"
+    plan: free
+    envVars:
+      - key: DDL_AUTO
+        value: "update"
+      - key: SHOW_SQL
+        value: "false"
+      - key: JAVA_OPTS
+        value: "-Xmx512m"
+
+databases:
+  - name: sime-database
+    databaseName: backendwebsime
+    user: sime_user
+    plan: free

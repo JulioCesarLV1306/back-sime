@@ -18,8 +18,9 @@ import java.util.Map;
 @RequestMapping("/api/alumnos")
 @CrossOrigin(origins = {
     "http://localhost:4200",
-    "https://*.netlify.app",
-    "https://netlify.app"
+    "https://web-sime.netlify.app",
+    "https://back-sime.onrender.com",
+    "null"
 })
 public class AlumnoController {
     

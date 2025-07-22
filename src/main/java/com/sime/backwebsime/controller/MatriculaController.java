@@ -62,13 +62,7 @@ public class MatriculaController {
             response.put("message", errorInfo.message);
             response.put("status", "ERROR");
             response.put("code", errorInfo.code);
-            response.put("type", errorInfo.type);
-            response.put("originalError", e.getMessage()); // Para debugging
-            response.put("timestamp", java.time.LocalDateTime.now().toString());
-            
-            return ResponseEntity.status(errorInfo.httpStatus).body(response);
-            
-        } catch (Exception e) {
+                        https://tu-app-sime.onrender.com/api/matricula/listar
             System.err.println("🎯 CONTROLADOR: Capturado Exception general: " + e.getMessage());
             e.printStackTrace();
             

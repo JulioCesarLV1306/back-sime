@@ -18,7 +18,7 @@ public class SwaggerConfig {
         return new OpenAPI()
                 .servers(List.of(
                         new Server().url("http://localhost:8080").description("Servidor de Desarrollo"),
-                        new Server().url("https://tu-app-sime.onrender.com").description("Servidor de Producción en Render")
+                        new Server().url("https://back-sime.onrender.com").description("Servidor de Producción en Render")
                 ))
                 .info(new Info()
                         .title("SIME - Sistema de Matrículas Escolares")
